@@ -1,16 +1,14 @@
-import urllib.request
-import datetime
-import time
+import datetime as dt
+import requests
 
-for i in range(26, 30):
-    for j in [1, 6, 12, 18]:
-        date = datetime.datetime(2016, 12, i, j)
-        date_timestamp = time.mktime(date.timetuple())
-        print ("2015-12-{0} {1}h: {2}".format(i, j, date_timestamp))
-        url = 'https://min-api.cryptocompare.com/data/pricehistorical' \
-              '?fsym=ETH&tsyms=EUR&ts=' + str(date_timestamp)
-        response = urllib.request.urlopen(url)
-        print(response.read())
-    print ('\n')
+date_format = "%Y-%m-%d"
 
-# datetime.fromtimestamp(1346236702)
+url = 'https://min-api.cryptocompare.com/data/histoday?' \
+      'fsym=ETH&tsym=EUR&limit=10&aggregate=1&e=CCCAGG'
+response = requests.get(url=url)
+data = response.json()
+
+for daily_data in data["Data"]:
+    current_date = dt.datetime.fromtimestamp(
+        daily_data['time']).strftime(date_format)
+    print ('{}: {}'.format(current_date, daily_data['close']))
