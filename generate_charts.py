@@ -1,15 +1,20 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import csv
+import json
+import date_app.dateFormat as df
 
 dates = []
 values = []
 
-with open('data.csv', 'rb') as csvfile:
-    datareader = csv.reader(csvfile, delimiter=',', quotechar='|')
-    for row in datareader:
-        dates.append(int(row[0]))
-        values.append(float(row[1]))
+with open('data/data.json', 'r') as f:
+    data = json.load(f)
+
+for daily_data in data:
+    print("{}: {}".format(df.tsp_to_date(daily_data['time']),
+          daily_data['close']))
+    dates.append(daily_data['time'])
+    values.append(daily_data['close'])
+
 
 x = np.array(dates)
 y = np.array(values)
