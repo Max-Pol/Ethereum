@@ -1,13 +1,27 @@
 import requests
 import json
-# import date_app.dateFormat as df
-
-url = 'https://min-api.cryptocompare.com/data/histoday?' \
-      'fsym=ETH&tsym=EUR&limit=200&aggregate=1&e=CCCAGG'
-response = requests.get(url=url)
-data = response.json()
+import date_app.dateFormat as df
 
 
+def get_data(fsym, tsym, time_range):
+    if (time_range == "day"):
+        url = 'https://min-api.cryptocompare.com/data/histoday?' \
+              '&e=CCCAGG&useBTC=true&aggregate=1' \
+              '&fsym=' + fsym +\
+              '&tsym=' + tsym +\
+              '&limit=' + str(df.time_from_creation(fsym, "days"))
+    elif (time_range == "hour"):
+        url = 'https://min-api.cryptocompare.com/data/histohour?' \
+              '&e=CCCAGG&useBTC=true&aggregate=1' \
+              '&fsym=' + fsym +\
+              '&tsym=' + tsym +\
+              '&limit=' + str(df.time_from_creation(fsym, "hours"))  # 2000 MAX
+
+    response = requests.get(url=url)
+    return response.json()
+
+
+data = get_data("ETH", "USD", "hour")
 with open('data/data.json', 'w') as f:
     json.dump(data["Data"], f)
 
