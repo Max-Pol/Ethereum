@@ -14,7 +14,7 @@ import date_app.dateFormat as df
 # fix random seed for reproducibility
 numpy.random.seed(7)
 
-with open('data/data.json', 'r') as f:
+with open('local_data/data.json', 'r') as f:
     data = json.load(f)
 
 

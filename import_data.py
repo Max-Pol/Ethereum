@@ -22,7 +22,7 @@ def get_data(fsym, tsym, time_range):
 
 
 data = get_data("ETH", "USD", "day")
-with open('data/data.json', 'w') as f:
+with open('local_data/data.json', 'w') as f:
     json.dump(data["Data"], f)
 
 # # Print samples
