@@ -21,7 +21,7 @@ def get_data(fsym, tsym, time_range):
     return response.json()
 
 
-data = get_data("ETH", "USD", "hour")
+data = get_data("ETH", "USD", "day")
 with open('data/data.json', 'w') as f:
     json.dump(data["Data"], f)
 

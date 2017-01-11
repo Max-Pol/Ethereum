@@ -8,8 +8,8 @@ start_date["BTC"] = dt.datetime(2009, 1, 3)  # estimate
 
 
 def tsp_to_datetime(timestamp):
-    date = dt.datetime.fromtimestamp(timestamp)
-    return date
+    datetime = dt.datetime.fromtimestamp(timestamp)
+    return datetime
 
 
 def tsp_to_date_str(timestamp):
