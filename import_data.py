@@ -1,6 +1,7 @@
 import requests
 import json
 import date_app.dateFormat as df
+import os
 
 
 def get_data(fsym, tsym, time_range):
@@ -21,9 +22,14 @@ def get_data(fsym, tsym, time_range):
     return response.json()
 
 
+#  Import data
+if not os.path.exists('local_data/'):
+    os.makedirs('local_data/')
+
 data = get_data("ETH", "USD", "day")
 with open('local_data/data.json', 'w') as f:
     json.dump(data["Data"], f)
+
 
 # # Print samples
 # if data["Response"] == "Success":
