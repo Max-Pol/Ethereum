@@ -10,7 +10,7 @@ values = []
 months = mdates.MonthLocator()
 fig, ax = plt.subplots()
 
-with open('local_data/data.json', 'r') as f:
+with open('data/data.json', 'r') as f:
     data = json.load(f)
 
 for daily_data in data:
