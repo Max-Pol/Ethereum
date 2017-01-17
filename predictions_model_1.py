@@ -8,7 +8,15 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import mean_squared_error
 import json
 import os
+import argparse
 
+
+# parameter
+parser = argparse.ArgumentParser(description="Hello")
+parser.add_argument('--look-back', '-l', type=int, help='look back', default=1)
+args = parser.parse_args()
+look_back = args.look_back
+print("look_back = {}".format(look_back))
 
 with open('data/data.json', 'r') as f:
     data = json.load(f)
@@ -48,7 +56,6 @@ def create_dataset(dataset, look_back=1):
 
 
 # reshape into X=t and Y=t+1
-look_back = 5
 trainX, trainY = create_dataset(train, look_back)
 testX, testY = create_dataset(test, look_back)
 # reshape input to be [samples, time steps, features]
