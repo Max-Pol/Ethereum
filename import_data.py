@@ -4,7 +4,7 @@ import date_app.dateFormat as df
 import os
 
 
-def get_data(fsym, tsym, time_range):
+def get_data(fsym, tsym, time_range):  # TODO: params paremeter in request.get
     if (time_range == "day"):
         url = 'https://min-api.cryptocompare.com/data/histoday?' \
               '&e=CCCAGG&useBTC=true&aggregate=1' \

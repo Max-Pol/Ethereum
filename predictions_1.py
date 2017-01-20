@@ -11,7 +11,7 @@ import os
 import argparse
 
 
-# parameter
+# parameters
 parser = argparse.ArgumentParser(description="Hello")
 parser.add_argument('--look-back', '-l', type=int, help='look back', default=1)
 args = parser.parse_args()
@@ -42,7 +42,7 @@ dataset = scaler.fit_transform(dataset)
 train_size = int(len(dataset) * 0.67)
 test_size = len(dataset) - train_size
 train, test = dataset[0:train_size, :], dataset[train_size:len(dataset), :]
-print("len(train), len(test) = ({}, {})".format(len(train), len(test)))
+print("(train, test) = ({}, {})\n".format(len(train), len(test)))
 
 
 # convert an array of values into a dataset matrix
@@ -59,8 +59,8 @@ def create_dataset(dataset, look_back=1):
 trainX, trainY = create_dataset(train, look_back)
 testX, testY = create_dataset(test, look_back)
 # reshape input to be [samples, time steps, features]
-trainX = np.reshape(trainX, (trainX.shape[0], 1, trainX.shape[1]))
-testX = np.reshape(testX, (testX.shape[0], 1, testX.shape[1]))
+trainX = trainX.reshape((trainX.shape[0], 1, trainX.shape[1]))
+testX = testX.reshape((testX.shape[0], 1, testX.shape[1]))
 
 
 # load or create model
@@ -97,7 +97,7 @@ trainY = scaler.inverse_transform([trainY])  # don't forget []
 testPredict = scaler.inverse_transform(testPredict)
 testY = scaler.inverse_transform([testY])  # don't forget []
 seqPredict = scaler.inverse_transform(seqPredict)
-# print (seqPredict)
+
 # calculate root mean squared error
 trainScore = math.sqrt(mean_squared_error(trainY[0], trainPredict[:, 0]))
 print('Train Score: %.2f RMSE' % (trainScore))
