@@ -8,126 +8,144 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import mean_squared_error
 import json
 import os
-import argparse
 
 
-# parameters
-parser = argparse.ArgumentParser(description="Hello")
-parser.add_argument('--look-back', '-l', type=int, help='look back', default=1)
-args = parser.parse_args()
-look_back = args.look_back
-print("look_back = {}".format(look_back))
+# PARAMETERS
+features_used = [  # comment to discard a feature
+    "volumeto",
+    "high",
+    "low",
+    # "time",
+    "volumefrom",
+    "close",
+    "open"
+]
+look_back = 5
+nb_epoch = 100
+load_mode = 'load_or_train'
+features_plotted = features_used
 
-with open('data/data.json', 'r') as f:
-    data = json.load(f)
+
+# print parameters
+print("\n*** PARAMETERS ***\n"
+      "Number of features: {}\n"
+      "Look_back = {}\n"
+      "Features plotted: {}"
+      .format(len(features_used), look_back, features_plotted))
 
 
-# load the dataset
+# load the dataset, with the features in <features_used>
 dataset = []
+with open('local_data/data.json', 'r') as f:
+    data = json.load(f)
 for daily_data in data:
-    dataset.append([daily_data['close']])
+    features = []
+    for key, value in daily_data.items():
+        if key in features_used:
+            features.append(value)
+    dataset.append(features)
 
-# clean zeros at the beginning
-i = 0
-while dataset[i] == 0:
-    i += 1
-del dataset[0:i]
-
-
-# normalize the dataset
-scaler = MinMaxScaler(feature_range=(0, 1))
-dataset = scaler.fit_transform(dataset)
 
 # split into train and test sets
-train_size = int(len(dataset) * 0.67)
-test_size = len(dataset) - train_size
+dataset = np.array(dataset)
+train_size = int(dataset.shape[0] * 0.67)
+test_size = dataset.shape[0] - train_size
 train, test = dataset[0:train_size, :], dataset[train_size:len(dataset), :]
 print("(train, test) = ({}, {})\n".format(len(train), len(test)))
 
 
+# normalize the dataset
+scaler = MinMaxScaler(feature_range=(0, 1))
+scaler_test = MinMaxScaler(feature_range=(0, 1))
+train = scaler.fit_transform(train)
+test = scaler_test.fit_transform(test)
+
+
 # convert an array of values into a dataset matrix
-def create_dataset(dataset, look_back=1):
+def create_dataset(dataset, look_back):
     dataX, dataY = [], []
     for i in range(0, len(dataset) - look_back):
-        a = dataset[i:(i + look_back), 0]
+        a = dataset[i:(i + look_back), :]
         dataX.append(a)
-        dataY.append(dataset[i + look_back, 0])
-    return np.array(dataX), np.array(dataY)  # dataX (n,1) ; dataY (n,)
+        dataY.append(dataset[i + look_back, :])
+    return np.array(dataX), np.array(dataY)
+    # dataX: (samples, ts (l_b), features)
+    # dataY: (samples, features)
 
 
-# reshape into X=t and Y=t+1
+# reshape input to be [samples, time steps, features]
 trainX, trainY = create_dataset(train, look_back)
 testX, testY = create_dataset(test, look_back)
-# reshape input to be [samples, time steps, features]
-trainX = trainX.reshape((trainX.shape[0], 1, trainX.shape[1]))
-testX = testX.reshape((testX.shape[0], 1, testX.shape[1]))
 
 
 # load or create model
-path = 'data/lstm_look_back' + str(look_back) + '.h5'
-if os.path.exists(path):
-    model = load_model(path)
+model_params = {'input_dim': len(features_used)}
+model_path = 'local_data/LSTM' + \
+             '_inputdim' + str(len(features_used)) + \
+             '_l' + str(look_back) + \
+             '_epoch' + str(nb_epoch) + '.h5'
+if os.path.exists(model_path) and load_mode == 'load_or_train':
+    model = load_model(model_path)
 else:
     # create and fit the LSTM network
     model = Sequential()
-    model.add(LSTM(4, input_dim=look_back))
-    model.add(Dense(1))
+    model.add(LSTM(4, input_dim=model_params['input_dim']))
+    model.add(Dense(model_params['input_dim']))
     model.compile(loss='mean_squared_error', optimizer='adam')
-    model.fit(trainX, trainY, nb_epoch=100, batch_size=1, verbose=1)
-    model.save(path)
+    # fit model
+    if nb_epoch != 0:
+        model.fit(trainX, trainY,
+                  nb_epoch=nb_epoch,
+                  batch_size=1,
+                  verbose=1)
+
+# save model
+# model.save(model_path)
 
 # make predictions
 trainPredict = model.predict(trainX)
 testPredict = model.predict(testX)
 
-# make predictions to several days (sequential predictions)
-seqTrain = testX[0].reshape(1, 1, look_back)
-seqPredict = model.predict(seqTrain)
-
-for i in range(len(testY) - 1):
-    a = np.hstack((seqTrain[-1, 0, 1:look_back],
-                   seqPredict[-1, 0])).reshape(1, 1, look_back)
-    b = model.predict(a)  # (1,1)
-    seqTrain = np.vstack((seqTrain, a))
-    seqPredict = np.vstack((seqPredict, b))  # n+1,1
-
 # invert predictions
 trainPredict = scaler.inverse_transform(trainPredict)
-trainY = scaler.inverse_transform([trainY])  # don't forget []
-testPredict = scaler.inverse_transform(testPredict)
-testY = scaler.inverse_transform([testY])  # don't forget []
-seqPredict = scaler.inverse_transform(seqPredict)
+trainY = scaler.inverse_transform(trainY)
+testPredict = scaler_test.inverse_transform(testPredict)
+testY = scaler_test.inverse_transform(testY)
 
 # calculate root mean squared error
-trainScore = math.sqrt(mean_squared_error(trainY[0], trainPredict[:, 0]))
-print('Train Score: %.2f RMSE' % (trainScore))
-testScore = math.sqrt(mean_squared_error(testY[0], testPredict[:, 0]))
-print('Test Score: %.2f RMSE' % (testScore))
-seqScore = math.sqrt(mean_squared_error(testY[0], seqPredict[:, 0]))
-print('Seq Score: %.2f RMSE' % (seqScore))
+print("\n** SCORES **")
+for idx, val in enumerate(features_used):
+    trainScore = math.sqrt(mean_squared_error(trainY[:, idx],
+                                              trainPredict[:, idx]))
+    testScore = math.sqrt(mean_squared_error(testY[:, idx],
+                                             testPredict[:, idx]))
+    print('{} train Score: {:.2f} RMSE'.format(val.upper(), trainScore))
+    print('{} test Score: {:.2f} RMSE\n'.format(val.upper(), testScore))
 
 
-# shift train predictions for plotting
-trainPredictPlot = np.empty_like(dataset)
-trainPredictPlot[:, :] = np.nan
-trainPredictPlot[look_back - 1:len(trainPredict) +
-                 look_back - 1, :] = trainPredict
+'''
+PLOTTING
+'''
 
-# shift test predictions for plotting
-testPredictPlot = np.empty_like(dataset)
-testPredictPlot[:, :] = np.nan
-testPredictPlot[train_size + look_back - 1:len(testPredict) +
-                train_size + look_back - 1, :] = testPredict
+for feature_plotted in features_plotted:
+    # shift train predictions for plotting
+    trainPredictPlot = np.empty_like(dataset[:, 0])
+    trainPredictPlot[:] = np.nan
+    trainPredictPlot[look_back - 1:len(trainPredict) + look_back - 1] \
+        = trainPredict[:, features_used.index(feature_plotted)]
+    trainPredictPlot = trainPredictPlot.reshape(len(trainPredictPlot), 1)
 
-# shift seq predictions for plotting
-seqPredictPlot = np.empty_like(dataset)
-seqPredictPlot[:, :] = np.nan
-start = train_size + look_back - 1
-seqPredictPlot[start:start + len(seqPredict), :] = seqPredict
+    # shift test predictions for plotting
+    testPredictPlot = np.empty_like(dataset[:, 0])
+    testPredictPlot[:] = np.nan
+    test_idx = train_size + look_back - 1
+    testPredictPlot[test_idx:len(testPredict) + test_idx]  \
+        = testPredict[:, features_used.index(feature_plotted)]
+    testPredictPlot = testPredictPlot.reshape(len(testPredictPlot), 1)
 
-# plot baseline and predictions
-plt.plot(scaler.inverse_transform(dataset))
-plt.plot(trainPredictPlot)
-plt.plot(testPredictPlot)
-plt.plot(seqPredictPlot)
-plt.show()
+    # plot baseline and predictions
+    plt.plot(dataset[:, features_used.index(feature_plotted)])
+    plt.plot(trainPredictPlot)
+    plt.plot(testPredictPlot)
+    plt.title(feature_plotted.upper())
+    plt.show()
