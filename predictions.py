@@ -6,8 +6,8 @@ from keras.layers import Dense
 from keras.layers import LSTM
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import mean_squared_error
-import json
 import os
+from utils import load_dataset
 
 
 # PARAMETERS
@@ -33,21 +33,10 @@ print("\n*** PARAMETERS ***\n"
       "Features plotted: {}"
       .format(len(features_used), look_back, features_plotted))
 
-
-# load the dataset, with the features in <features_used>
-dataset = []
-with open('local_data/data.json', 'r') as f:
-    data = json.load(f)
-for daily_data in data:
-    features = []
-    for key, value in daily_data.items():
-        if key in features_used:
-            features.append(value)
-    dataset.append(features)
-
+# load dataset into a numpy array [samples, features]
+dataset = load_dataset(features_used)
 
 # split into train and test sets
-dataset = np.array(dataset)
 train_size = int(dataset.shape[0] * 0.67)
 test_size = dataset.shape[0] - train_size
 train, test = dataset[0:train_size, :], dataset[train_size:len(dataset), :]

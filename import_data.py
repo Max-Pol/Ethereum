@@ -1,6 +1,8 @@
 import requests
 import json
-import date_app.dateFormat as df
+from date_app.dateFormat import time_from_creation
+# from date_app.dateFormat import tsp_to_date_str
+
 # import os
 
 
@@ -11,7 +13,7 @@ def get_data(fsym, tsym, time_range="hours"):
               "aggregate": "1",
               "fsym": fsym,
               "tsym": tsym,
-              "limit": str(df.time_from_creation(fsym, time_range))}
+              "limit": str(time_from_creation(fsym, time_range))}
     response = requests.get(url=url, params=params)  # limit params is 2000 max
     print("Imported from {}".format(url))
     return response.json()
@@ -35,5 +37,5 @@ with open('local_data/data.json', 'w') as f:
 
 # Print data sample
 # for daily_data in data["Data"]:
-#     date = df.tsp_to_date_str(daily_data['time'])
+#     date = tsp_to_date_str(daily_data['time'])
 #     print ('{}: {}'.format(date, daily_data['close']))
