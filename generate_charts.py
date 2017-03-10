@@ -1,4 +1,4 @@
-# import numpy as np
+import numpy as np
 import matplotlib.pyplot as plt
 # import matplotlib.dates as mdates
 # import date_app.dateFormat as df
@@ -16,12 +16,35 @@ features_plotted = [  # comment to discard a feature
     "open"
 ]
 
-dataset = load_dataset(features_plotted)
 
-for feature in features_plotted:
-    plt.plot(dataset[:, features_plotted.index(feature)])
-    plt.title(feature.upper())
-    plt.show()
+def plot_features():
+    dataset = load_dataset(features_plotted)
+
+    for feature in features_plotted:
+        plt.plot(dataset[:, features_plotted.index(feature)])
+        plt.title(feature.upper())
+        plt.show()
+
+
+def btc_number(n):
+    '''
+    Return the total number of bitcoins in existence after the n-th block
+    is mined.
+    Charateristics:
+        - Genesis block: 50 BTC
+        - One block is created approximately every 10 minutes, every
+          210 000 blocks, the reward is divided by 2.
+    '''
+    q = np.floor(n / 210000)
+    r = n % 210000
+    total = 210000 * 50 * (2 - 1 / 2. ** (q - 1)) + r * 50 / 2. ** q
+    return total
+
+
+x = np.linspace(0, 3000000, num=3000)
+plt.plot(x, btc_number(x))
+plt.show()
+
 
 '''
 dates = []
